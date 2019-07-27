@@ -21,6 +21,7 @@ import com.sun.source.tree.Tree;
 import com.sun.source.tree.Tree.Kind;
 import com.sun.source.tree.UnaryTree;
 import com.sun.source.tree.VariableTree;
+import com.sun.source.util.TreePath;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -32,6 +33,7 @@ import javax.lang.model.element.ElementKind;
 import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.element.VariableElement;
+import org.checkerframework.checker.compilermsgs.qual.CompilerMessageKey;
 import org.checkerframework.checker.initialization.InitializationVisitor;
 import org.checkerframework.checker.initialization.qual.UnderInitialization;
 import org.checkerframework.common.basetype.BaseTypeChecker;
@@ -560,6 +562,37 @@ public class PICOVisitor
                                     implAnnot),
                             impl);
                 }
+            }
+        }
+    }
+
+    /**
+     * Check if the type of the invoking constructor is a subtype of the invoked constructor's
+     * return type.
+     *
+     * @param superCall the super invocation, e.g., "super()"
+     * @param errorKey the error key, e.g., "super.invocation.invalid"
+     */
+    @Override
+    protected void checkThisOrSuperConstructorCall(
+            MethodInvocationTree superCall, @CompilerMessageKey String errorKey) {
+        TreePath path = atypeFactory.getPath(superCall);
+        MethodTree enclosingMethod = TreeUtils.enclosingMethod(path);
+        AnnotatedTypeMirror superType = atypeFactory.getAnnotatedType(superCall);
+        AnnotatedExecutableType constructorType = atypeFactory.getAnnotatedType(enclosingMethod);
+        Set<? extends AnnotationMirror> topAnnotations =
+                atypeFactory.getQualifierHierarchy().getTopAnnotations();
+        for (AnnotationMirror topAnno : topAnnotations) {
+            AnnotationMirror superTypeMirror = superType.getAnnotationInHierarchy(topAnno);
+            AnnotationMirror constructorTypeMirror =
+                    constructorType.getReturnType().getAnnotationInHierarchy(topAnno);
+
+            if (!atypeFactory
+                    .getQualifierHierarchy()
+                    .isSubtype(constructorTypeMirror, superTypeMirror)) {
+                checker.report(
+                        Result.failure(errorKey, constructorTypeMirror, superCall, superTypeMirror),
+                        superCall);
             }
         }
     }
