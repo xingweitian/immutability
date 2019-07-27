@@ -74,7 +74,9 @@ compileJava {
 
 afterEvaluate {
     // Create a task for each JUnit test class whose name is the same as the JUnit class name.
-    sourceSets.test.allJava.filter { it.path.contains("${picoPath}/src/test/java") }.forEach { file ->
+    sourceSets.test.allJava.filter {
+        it.path.contains("${picoPath}/src/test/java")
+    }.forEach { file ->
         String junitClassName = file.name.replaceAll(".java", "")
         String testName = junitClassName.replaceAll("Test", "")
         tasks.create(name: "${junitClassName}", type: Test) {
@@ -127,10 +129,10 @@ afterEvaluate {
 
 clean {
     delete "build",
-        "testdata",
-        "annotated",
-        "default.jaif",
-        fileTree("testinput") {include "**/*.class"}
+            "testdata",
+            "annotated",
+            "default.jaif",
+            fileTree("testinput") { include "**/*.class" }
 }
 
 /* Configuration for formatting */
@@ -138,7 +140,7 @@ clean {
 task getCodeFormatScripts {
     description "Obtain the run-google-java-format scripts"
     doLast {
-        if (! new File("$projectDir/build/utils/.run-google-java-format").exists()) {
+        if (!new File("$projectDir/build/utils/.run-google-java-format").exists()) {
             Grgit.clone(dir: "$projectDir/build/utils/.run-google-java-format", uri: 'https://github.com/plume-lib/run-google-java-format.git')
         } else {
             def rgjfGit = Grgit.open(dir: "$projectDir/build/utils/.run-google-java-format")
@@ -155,7 +157,7 @@ task pythonIsInstalled(type: Exec) {
 
 task checkFormat(type: Exec, dependsOn: [getCodeFormatScripts, pythonIsInstalled], group: 'Formatting') {
     description "Check whether the Java source code is properly formatted"
-    def javaFiles = fileTree("$projectDir").matching{
+    def javaFiles = fileTree("$projectDir").matching {
         include "**/*.java" exclude "testinput/**" exclude "testdata/**" exclude "build/**"
     } as List
     def pythonArgs = javaFiles.clone()
@@ -175,7 +177,7 @@ task checkFormat(type: Exec, dependsOn: [getCodeFormatScripts, pythonIsInstalled
 
 task reformat(type: Exec, dependsOn: [getCodeFormatScripts, pythonIsInstalled], group: 'Formatting') {
     description "Format the Java source code according to the Google Java Format style"
-    def javaFiles = fileTree("$projectDir").matching{
+    def javaFiles = fileTree("$projectDir").matching {
         include "**/*.java" exclude "testinput/**" exclude "testdata/**" exclude "build/**"
     } as List
     def pythonArgs = javaFiles.clone()
@@ -187,7 +189,7 @@ task reformat(type: Exec, dependsOn: [getCodeFormatScripts, pythonIsInstalled], 
 }
 
 task installGitHooks(type: Copy) {
-    group=null
+    group = null
     description "Installs git hooks for pre-commit"
     from 'scripts/'
     into '.git/hooks'
