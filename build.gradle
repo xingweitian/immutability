@@ -132,6 +132,7 @@ clean {
             "testdata",
             "annotated",
             "default.jaif",
+            "testTmp",
             fileTree("testinput") { include "**/*.class" }
 }
 
