@@ -39,7 +39,6 @@ import org.checkerframework.checker.initialization.qual.UnderInitialization;
 import org.checkerframework.common.basetype.BaseTypeChecker;
 import org.checkerframework.common.basetype.TypeValidator;
 import org.checkerframework.framework.source.Result;
-import org.checkerframework.framework.type.AnnotatedTypeFactory.ParameterizedExecutableType;
 import org.checkerframework.framework.type.AnnotatedTypeMirror;
 import org.checkerframework.framework.type.AnnotatedTypeMirror.AnnotatedDeclaredType;
 import org.checkerframework.framework.type.AnnotatedTypeMirror.AnnotatedExecutableType;
@@ -426,32 +425,6 @@ public class PICOVisitor
                 || type.hasAnnotation(RECEIVER_DEPENDANT_MUTABLE)
                 || type.hasAnnotation(POLY_MUTABLE))) {
             checker.report(Result.failure("pico.new.invalid", type), node);
-        }
-    }
-
-    @Override
-    public Void visitMethodInvocation(MethodInvocationTree node, Void p) {
-        super.visitMethodInvocation(node, p);
-        ParameterizedExecutableType mfuPair = atypeFactory.methodFromUse(node);
-        AnnotatedExecutableType invokedMethod = mfuPair.executableType;
-        ExecutableElement invokedMethodElement = invokedMethod.getElement();
-        // Only check invocability if it's super call, as non-super call is already checked
-        // by super implementation(of course in both cases, invocability is not checked when
-        // invoking static methods)
-        if (!ElementUtils.isStatic(invokedMethodElement) && TreeUtils.isSuperCall(node)) {
-            checkMethodInvocability(invokedMethod, node);
-        }
-        return null;
-    }
-
-    private void saveFbcViolatedMethods(
-            ExecutableElement method, String actualReceiver, String declaredReceiver) {
-        if (actualReceiver.contains("@UnderInitialization")
-                && declaredReceiver.contains("@Initialized")) {
-            String key = ElementUtils.enclosingClass(method) + "#" + method;
-            Integer times =
-                    fbcViolatedMethods.get(key) == null ? 1 : fbcViolatedMethods.get(key) + 1;
-            fbcViolatedMethods.put(key, times);
         }
     }
 
